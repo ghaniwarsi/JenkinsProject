@@ -33,7 +33,13 @@ pipeline {
         stage('Build Test Package') {
             steps {
                 bat '''
-                    call "%ProgramFiles%\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\Tools\\VsDevCmd.bat" -arch=amd64
+                    for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\\Microsoft Visual Studio\\Installer\\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -find Common7\\Tools\\VsDevCmd.bat`) do set VSDEVCMD=%%i
+                    if not defined VSDEVCMD (
+                        echo Could not find Visual Studio Build Tools C++ environment.
+                        echo Install Visual Studio Build Tools with the Desktop development with C++ workload.
+                        exit /b 1
+                    )
+                    call "%VSDEVCMD%" -arch=amd64
                     python scripts\\build.py --configuration Release
                 '''
             }
