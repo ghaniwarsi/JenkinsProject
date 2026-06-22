@@ -25,13 +25,17 @@ pipeline {
                     python --version
                     cmake --version
                     ninja --version
+                    clang++ --version
                 '''
             }
         }
 
         stage('Build Test Package') {
             steps {
-                bat 'python scripts\\build.py --configuration Release'
+                bat '''
+                    call "%ProgramFiles%\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\Tools\\VsDevCmd.bat" -arch=amd64
+                    python scripts\\build.py --configuration Release
+                '''
             }
         }
     }
