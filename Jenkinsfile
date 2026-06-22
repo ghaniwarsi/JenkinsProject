@@ -39,7 +39,7 @@ pipeline {
                         echo Install Visual Studio Build Tools.
                         exit /b 1
                     )
-                    for /f "delims=" %%i in ('""%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -find Common7\\Tools\\VsDevCmd.bat"') do set "VSDEVCMD=%%i"
+                    for /f "delims=" %%i in ('cmd /s /c ""%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -find Common7\\Tools\\VsDevCmd.bat"') do set "VSDEVCMD=%%i"
                     if not defined VSDEVCMD (
                         echo Could not find Visual Studio Build Tools C++ environment.
                         echo Install Visual Studio Build Tools with the Desktop development with C++ workload.
@@ -47,6 +47,7 @@ pipeline {
                     )
                     echo Using Visual Studio environment: "%VSDEVCMD%"
                     call "%VSDEVCMD%" -arch=amd64
+                    if errorlevel 1 exit /b %errorlevel%
                     python scripts\\build.py --configuration Release
                 '''
             }
