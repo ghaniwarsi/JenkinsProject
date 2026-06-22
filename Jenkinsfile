@@ -32,23 +32,24 @@ pipeline {
 
         stage('Build Test Package') {
             steps {
-                bat '''
-                    set "VSWHERE=%ProgramFiles(x86)%\\Microsoft Visual Studio\\Installer\\vswhere.exe"
-                    if not exist "%VSWHERE%" (
-                        echo Could not find vswhere.exe at "%VSWHERE%".
-                        echo Install Visual Studio Build Tools.
-                        exit /b 1
-                    )
-                    for /f "delims=" %%i in ('cmd /s /c ""%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -find Common7\\Tools\\VsDevCmd.bat"') do set "VSDEVCMD=%%i"
-                    if not defined VSDEVCMD (
-                        echo Could not find Visual Studio Build Tools C++ environment.
-                        echo Install Visual Studio Build Tools with the Desktop development with C++ workload.
-                        exit /b 1
-                    )
-                    echo Using Visual Studio environment: "%VSDEVCMD%"
-                    call "%VSDEVCMD%" -arch=amd64
-                    if errorlevel 1 exit /b %errorlevel%
-                    python scripts\\build.py --configuration Release
+                powershell '''
+                    $ErrorActionPreference = "Stop"
+
+                    $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\\Installer\\vswhere.exe"
+                    if (-not (Test-Path $vswhere)) {
+                        throw "Could not find vswhere.exe at $vswhere. Install Visual Studio Build Tools."
+                    }
+
+                    $vsDevCmd = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -find "Common7\\Tools\\VsDevCmd.bat"
+                    if (-not $vsDevCmd) {
+                        throw "Could not find Visual Studio Build Tools C++ environment. Install the Desktop development with C++ workload."
+                    }
+
+                    Write-Host "Using Visual Studio environment: $vsDevCmd"
+                    cmd.exe /s /c "call `"$vsDevCmd`" -arch=amd64 && python scripts\\build.py --configuration Release"
+                    if ($LASTEXITCODE -ne 0) {
+                        exit $LASTEXITCODE
+                    }
                 '''
             }
         }
